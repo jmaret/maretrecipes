@@ -1,8 +1,9 @@
 class RecipesController < ApplicationController
 
-  before_action :set_recipe, only: [:edit, :update, :show, :like]
+  before_action :set_recipe, only: [:edit, :update, :show, :destroy, :like]
   before_action :require_user, except: [:show, :index]
   before_action :require_same_user, only: [:edit, :update]
+  before_action :admin_user, only: :destory
 
   def index
     #@recipes = Recipe.all.sort_by{|likes| likes.thumbs_up_total}.reverse
@@ -41,6 +42,12 @@ class RecipesController < ApplicationController
     end    
   end
   
+  def destroy
+    @recipe.destroy
+    flash[:success] = "Recipe Deleted"
+    redirect_to recipes_path
+  end
+  
   def like
 
     like = Like.create(like: params[:like], chef: current_user, recipe: @recipe)
@@ -64,10 +71,13 @@ class RecipesController < ApplicationController
     end
     
     def require_same_user
-      if current_user != @recipe.chef
+      if current_user != @recipe.chef and !current_user.admin?
         flash[:danger] = "You can only edit your own recipe"
         redirect_to recipes_path
       end
     end
     
+    def admin_user
+      redirect_to recipes_path unless current_user.admin?
+    end
 end
